@@ -165,7 +165,8 @@ vagrant@vagrant:~/testssl.sh$ ./testssl.sh -U --sneaky https://www.eurointegrati
  Done 2022-03-27 20:24:48 [  31s] -->> 130.211.29.18:443 (www.eurointegration.com.ua) <<--```
 
 ```
-5. Установите на Ubuntu ssh сервер, сгенерируйте новый приватный ключ. Скопируйте свой публичный ключ на другой сервер. Подключитесь к серверу по SSH-ключу.
+5. Установите на Ubuntu ssh сервер, сгенерируйте новый приватный ключ. Скопируйте свой публичный ключ на другой сервер. 
+Подключитесь к серверу по SSH-ключу.
 
 - Установим и запустим SSH сервер
 ```
@@ -194,27 +195,188 @@ Mar 27 20:11:05 vagrant sshd[51200]: pam_unix(sshd:session): session opened for 
 ```
 
 - сгенерируем ключ
-
-vagrant@vagrant:~$ ssh-keygen -t rsa
+```
+vagrant@vagrant:~$ ssh-keygen
 Generating public/private rsa key pair.
-Enter file in which to save the key (/home/vagrant/.ssh/id_rsa): kapli
+Enter file in which to save the key (/home/vagrant/.ssh/id_rsa):
 Enter passphrase (empty for no passphrase):
 Enter same passphrase again:
-Your identification has been saved in kapli
-Your public key has been saved in kapli.pub
+Your identification has been saved in /home/vagrant/.ssh/id_rsa
+Your public key has been saved in /home/vagrant/.ssh/id_rsa.pub
 The key fingerprint is:
-SHA256:fnpKrCcOeJg9PgqCkPa4OJw6BHwNqK3QNii72IGv56g vagrant@vagrant
+SHA256:tEF/20O5Hfi8+7sgdPkFAyqmZo39bS9KQAiJBqVnarM vagrant@vagrant
 The key's randomart image is:
 +---[RSA 3072]----+
-|  .              |
-| . .             |
-|o+  o            |
-|*o=. .           |
-|**..    S        |
-|B.+=   o         |
-|B==o=   + .      |
-|B==o.o.o.o.      |
-|EBo..ooooo       |
+|.o....  .   .    |
+| .o .. o . . ... |
+|..o   . * o ..=. |
+| +     O + . ++=.|
+|.o    = S  ..o+oo|
+|. o  o   o... ..o|
+| E        o.o. o |
+|         . .o.. .|
+|          .. ..+=|
 +----[SHA256]-----+
 
-отправим ключ на физический хост
+```
+
+- отправим публичный ключ на физический хост 
+```
+vagrant@vagrant:~$ cd /home/vagrant/.ssh/
+vagrant@vagrant:~/.ssh$ cp /home/vagrant/.ssh/id_rsa.pub /home/vagrant/
+vagrant@vagrant:~/.ssh$ echo /home/vagrant/.ssh/id_rsa.pub
+/home/vagrant/.ssh/id_rsa.pub
+vagrant@vagrant:~/.ssh$ ssh-copy-id -i ~/.ssh/id_rsa.pub vagrant@192.168.33.11
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/home/vagrant/.ssh/id_rsa.pub"
+The authenticity of host '192.168.33.11 (192.168.33.11)' can't be established.
+ECDSA key fingerprint is SHA256:RztZ38lZsUpiN3mQrXHa6qtsUgsttBXWJibL2nAiwdQ.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+vagrant@192.168.33.11's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'vagrant@192.168.33.11'"
+and check to make sure that only the key(s) you wanted were added.
+```
+
+- зайдем на удаленный сервер 192.168.33.11
+```
+
+vagrant@vagrant:~/.ssh$ ssh vagrant@192.168.33.11
+Welcome to Ubuntu 20.04.3 LTS (GNU/Linux 5.4.0-91-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Tue 29 Mar 2022 08:26:40 PM UTC
+
+  System load:  0.25               Processes:             152
+  Usage of /:   13.1% of 30.88GB   Users logged in:       1
+  Memory usage: 11%                IPv4 address for eth0: 10.0.2.15
+  Swap usage:   0%                 IPv4 address for eth1: 192.168.33.11
+
+
+This system is built by the Bento project by Chef Software
+More information can be found at https://github.com/chef/bento
+Last login: Tue Mar 29 20:24:47 2022 from 10.0.2.2
+vagrant@vagrant:~$
+```
+
+6. Переименуйте файлы ключей из задания 5. Настройте файл конфигурации SSH клиента, 
+так чтобы вход на удаленный сервер осуществлялся по имени сервера.
+
+- создаим файл конфигурации, чтобы заходить по имени
+```
+vagrant@vagrant:~/.ssh$ sudo touch config
+vagrant@vagrant:~/.ssh$ sudo vi config
+vagrant@vagrant:~/.ssh$ rn -h
+-bash: rn: command not found
+vagrant@vagrant:~/.ssh$ rname
+-bash: rname: command not found
+vagrant@vagrant:~/.ssh$ cat config
+Host S_K
+    HostName 192.168.33.11
+    User vagrant
+    Port 22
+    IdentityFile ~/.ssh/kaplin.key
+vagrant@vagrant:~/.ssh$ mv id_rsa kaplin.key
+vagrant@vagrant:~/.ssh$ ls -al
+total 40
+drwx------ 2 vagrant root    4096 Mar 29 20:38 .
+drwxr-xr-x 9 vagrant vagrant 4096 Mar 29 20:01 ..
+-rw------- 1 vagrant vagrant  389 Jan  8 16:37 authorized_keys
+-rw-r--r-- 1 root    root     100 Mar 29 20:36 config
+-rw-r--r-- 1 vagrant vagrant  569 Mar 29 19:59 id_rsa.pub
+-rw------- 1 vagrant vagrant 2602 Mar 29 19:59 kaplin.key
+-rw------- 1 vagrant vagrant  444 Mar 29 20:23 known_hosts
+-rw-r--r-- 1 vagrant vagrant  444 Mar 28 19:15 known_hosts.old
+-rw------- 1 vagrant vagrant 2602 Mar 28 20:23 y
+-rw-r--r-- 1 vagrant vagrant  569 Mar 28 20:23 y.pub
+```
+
+- попробуем зайти по имени S_K, видно что вход выполняется успешно.
+```
+vagrant@vagrant:~/.ssh$ ssh S_K
+Welcome to Ubuntu 20.04.3 LTS (GNU/Linux 5.4.0-91-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Tue 29 Mar 2022 08:41:46 PM UTC
+
+  System load:  0.0                Processes:             143
+  Usage of /:   13.1% of 30.88GB   Users logged in:       1
+  Memory usage: 11%                IPv4 address for eth0: 10.0.2.15
+  Swap usage:   0%                 IPv4 address for eth1: 192.168.33.11
+
+
+This system is built by the Bento project by Chef Software
+More information can be found at https://github.com/chef/bento
+Last login: Tue Mar 29 20:26:41 2022 from 192.168.33.10
+vagrant@vagrant:~$
+```
+7. Соберите дамп трафика утилитой tcpdump в формате pcap, 100 пакетов. Откройте файл pcap в Wireshark.
+
+- запустим команду tcpdump с опциями -с и -w для интерфейса eth1. Создадим трафик, выкачивая файл через ftp c windows машины
+
+
+```
+vagrant@vagrant:~$ sudo tcpdump  -c 100 -w file.pcap -i eth1
+tcpdump: listening on eth1, link-type EN10MB (Ethernet), capture size 262144 bytes
+100 packets captured
+184 packets received by filter
+0 packets dropped by kernel
+```
+
+```
+PS C:\Users\kapli> ftp 192.168.33.10
+Связь с 192.168.33.10.
+220 (vsFTPd 3.0.3)
+200 Always in UTF8 mode.
+Пользователь (192.168.33.10:(none)): vagrant
+331 Please specify the password.
+Пароль:
+230 Login successful.
+ftp> dir
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+-rw-rw-r--    1 1000     1000         1624 Feb 13 19:27 2.txt
+-rw-rw-r--    1 1000     1000           30 Feb 02 20:08 file
+-rw-r--r--    1 108      113          4096 Mar 29 21:22 file.pcap
+-rw-rw-r--    1 1000     1000           13 Jan 26 21:22 file1
+-rw-rw-r--    1 1000     1000         9022 Feb 02 20:08 file3
+-rw-r--r--    1 0        0               7 Mar 13 20:12 file_ping
+-rw-r--r--    1 1000     1000          569 Mar 29 20:01 id_rsa.pub
+-rw-------    1 1000     1000         2602 Mar 28 19:56 kapli
+-rw-r--r--    1 1000     1000          569 Mar 28 19:56 kapli.pub
+-rw-r--r--    1 0        0               0 Mar 01 21:42 node-exporter.service
+drwxr-xr-x    2 1000     1000         4096 Mar 01 22:36 node_exporter-1.3.1.linux-amd64
+-rw-rw-r--    1 1000     1000      9033415 Dec 08 08:52 node_exporter-1.3.1.linux-amd64.tar.gz
+drwxr-xr-x    5 1000     1000         4096 Feb 09 20:05 prometheus-2.33.1.linux-amd64
+-rw-rw-r--    1 1000     1000     75820306 Feb 02 15:43 prometheus-2.33.1.linux-amd64.tar.gz
+-rw-rw-r--    1 1000     1000            0 Feb 02 21:15 stop
+drwxrwxr-x    9 1000     1000         4096 Mar 27 20:11 testssl.sh
+-rw-------    1 1000     1000         2602 Mar 28 21:39 y
+-rw-r--r--    1 1000     1000          569 Mar 28 21:13 y.pub
+-rw-r--r--    1 1000     1000       106151 Feb 08 19:57 ystemctl status nginx.service
+ftp> get prometheus-2.33.1.linux-amd64.tar.gz
+200 PORT command successful. Consider using PASV.
+150 Opening BINARY mode data connection for prometheus-2.33.1.linux-amd64.tar.gz (75820306 bytes).
+226 Transfer complete.
+ftp: 75820306 байт получено за 2.94 (сек) со скоростью 25771.69 (КБ/сек).
+ftp> get file.pcap
+421 Timeout.
+
+```
+
+- видим сформированный файл в формате pcap
+```
+vagrant@vagrant:~$ ls -al
+-rw-r--r-- 1 tcpdump tcpdump    18925 Mar 29 21:25  file.pcap
+```
+- ниже скриншоты из Wireshark
+![Активация второго фактора 6](Sec06.jpg)
