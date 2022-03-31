@@ -93,8 +93,57 @@ vagrant@vagrant:/etc/apache2/sites-available$ sudo vi test-ssl.conf
 ```
 
 - активируем модуль ssl
-sudo a2enmod ssl
-- 
+```
+sudo a2enmod ssl 
+```
+- сгенерируем сертификат
+```
+openssl req -x509 -nodes -days 9999  -newkey rsa:2048 -keyout ./domain.key -out ./domain.crt
+Generating a RSA private key
+................................................+++++
+...................................................+++++
+writing new private key to './domain.key'
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:RU
+State or Province Name (full name) [Some-State]:
+Locality Name (eg, city) []:
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:
+```
+- Пропишем настройки в test-ssl.conf
+```
+<VirtualHost *:443>
+                ServerAdmin webmaster@localhost
+                ServerName test.site
+                ServerAlias www.test.site
+                DocumentRoot /var/www/test-site
+SSLEngine on 
+SSLCertificateFile      /home/vagrant/domain.crt
+SSLCertificateKeyFile   /home/vagrant/domain.key
+</VirtualHost>
+```
+- активируем новый сайт и перезагрузим Apache2
+```
+vagrant@vagrant:/etc/apache2/sites-available$ sudo a2ensite test-ssl.conf
+Enabling site test-ssl.
+To activate the new configuration, you need to run:
+  systemctl reload apache2
+vagrant@vagrant:/etc/apache2/sites-available$ systemctl reload apache2
+==== AUTHENTICATING FOR org.freedesktop.systemd1.manage-units ===
+Authentication is required to reload 'apache2.service'.
+Authenticating as: vagrant
+Password:
+==== AUTHENTICATION COMPLETE ===
+```
+- сайт доступен с самоподписанным сертификатом:
+![Самоподписанный сертификат](Sec07.jpg)
+
 4. Проверьте на TLS уязвимости произвольный сайт в интернете (кроме сайтов МВД, ФСБ, МинОбр, НацБанк, РосКосмос, РосАтом, РосНАНО и любых госкомпаний, объектов КИИ, ВПК ... и тому подобное).
 
 - установим средство 
